@@ -13,7 +13,7 @@ spec:
          - resources:
             kinds:
               - Deployment
-    - validate:
+      validate:
         message: "The label 'team' is required for all deployments."
         pattern:
           metadata:
