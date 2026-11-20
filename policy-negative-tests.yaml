@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fail-team-and-replicas
+  labels:
+    app: fail-team-and-replicas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fail-team-and-replicas
+  template:
+    metadata:
+      labels:
+        app: fail-team-and-replicas
+    spec:
+      containers:
+        - name: web
+          image: kodekloud.io/nginx:1.19.0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fail-latest-and-registry
+  labels:
+    app: fail-latest-and-registry
+spec:
+  containers:
+    - name: web
+      image: nginx:latest

@@ -1,20 +1,21 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
-  name: minimum-replicas 
-
-
+  name: minimum-replicas
 spec:
-  validationFailureAction: Enforce
-  rules:
-    - name: minimum-required-replicas 
-      match:
-       any:
-         - resources:
-            kinds:
-              - Deployment
-    - validate:
-        message: "Must have at least 3 replicas on deployments."
-        pattern:
-          spec:
-            replicas: ">=3"
+  validationActions:
+    - Deny
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+  validations:
+    - expression: has(object.spec.replicas) && object.spec.replicas >= 3
+      message: "Must have at least 3 replicas on deployments."

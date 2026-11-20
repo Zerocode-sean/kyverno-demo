@@ -1,20 +1,22 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: deny-Public-Registry-Images
 
 spec:
-  validationFailureAction: Enforce
-  rules:
-    - name: require-private-registry-images-only
-      match:
-       any:
-         - resources:
-            kinds:
-              - Pod 
-    - validate:
-        message: "Unknown image registry."
-        pattern:
-          spec:
-           containers:
-             image: "kodekloud.io/*"
+  validationActions:
+    - Deny
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+  validations:
+    - expression: has(object.spec.containers) && object.spec.containers.all(c, c.image.startsWith('kodekloud.io/'))
+      message: "Unknown image registry."
