@@ -1,0 +1,35 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: no-latest-tag-policy
+
+
+spec:
+  validationFailureAction: Enforce
+  rules:
+    - name: Require-image-tag
+      match:
+       any:
+         - resources:
+            kinds:
+              - Pod
+    - validate:
+        message: "Must use valid image tags."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+    - name: Don't-use-latest-tag
+      match:
+       any:
+         - resources:
+            kinds:
+              - Pod
+    - validate:
+        message: "Must not use the 'latest' tag."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+
+    
