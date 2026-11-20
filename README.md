@@ -18,16 +18,21 @@ Kyverno integrates with the Kubernetes admission controller. Policies can block 
 | File | Resource | Purpose |
 | --- | --- | --- |
 | `deployment.yaml` | `Deployment` | Defines a sample nginx deployment with one replica. |
-| `label-policy.yaml` | `ClusterPolicy` | Requires deployments to include a `team` label. |
+| `label-policy.yaml` | `ValidatingPolicy` | Requires deployments to include a `team` label. |
 | `replica-policy.yaml` | `ClusterPolicy` | Requires deployments to specify at least three replicas. |
 | `no-latest-tag-policy.yaml` | `ClusterPolicy` | Rejects Pods that use images with the `latest` tag. |
 | `private-registry.yaml` | `ClusterPolicy` | Restricts Pod images to registries matching `kodekloud.io/*`. |
 
 ## How Kyverno is used here
 
-The repository uses `ClusterPolicy` resources, which apply across the cluster rather than only within a single namespace.
+This repository currently mixes Kyverno policy APIs:
 
-The policies use **Enforce** mode (`validationFailureAction: Enforce`). A resource that violates a policy is rejected by the Kubernetes API server. This repository demonstrates validation only; its policies do not mutate or generate resources.
+- `label-policy.yaml` uses CEL-based `ValidatingPolicy` (`policies.kyverno.io/*`).
+- The other policy files use legacy `ClusterPolicy` (`kyverno.io/v1`).
+
+For Kyverno v1.20+, create or update requests for legacy `ClusterPolicy` may be rejected. Migrate remaining policies to `ValidatingPolicy`, `MutatingPolicy`, `GeneratingPolicy`, or `ImageValidatingPolicy` as needed.
+
+The label policy uses deny mode (`validationActions: [Deny]`). Legacy policies in this repo use enforce mode (`validationFailureAction: Enforce`). In both cases, violating resources are rejected by the Kubernetes API server.
 
 ### Team label
 
@@ -69,7 +74,7 @@ kubectl get pods -n kyverno
 
 ## Apply the policies
 
-Install all ClusterPolicies from this repository:
+Apply all policies from this repository:
 
 ```bash
 kubectl apply -f label-policy.yaml
@@ -82,7 +87,31 @@ Confirm that the policies are registered:
 
 ```bash
 kubectl get clusterpolicy
+kubectl get validatingpolicy
 ```
+
+## KodeKloud lab Git sync workflow
+
+If you edit locally and run the cluster from a KodeKloud control node clone, sync the lab checkout before reapplying manifests.
+
+Push local changes:
+
+```bash
+git add label-policy.yaml README.md
+git commit -m "Migrate team label policy to ValidatingPolicy"
+git push origin main
+```
+
+On the KodeKloud control node:
+
+```bash
+cd ~/kyverno-demo
+git fetch origin
+git pull --ff-only origin main
+kubectl apply -f label-policy.yaml
+```
+
+If `git pull` fails due to local lab edits, either stash and pull, or reclone to match remote exactly.
 
 ## Test the sample deployment
 
@@ -92,7 +121,7 @@ Apply the sample workload:
 kubectl apply -f deployment.yaml
 ```
 
-With the policies currently in Enforce mode, the sample deployment may be rejected because it:
+With the current deny/enforce policy mix, the sample deployment may be rejected because it:
 
 - Uses a deployment with only one replica.
 - Does not include the required `team` label.
@@ -131,12 +160,13 @@ List installed policies:
 
 ```bash
 kubectl get clusterpolicy
+kubectl get validatingpolicy
 ```
 
 Describe a policy for rule and status details:
 
 ```bash
-kubectl describe clusterpolicy require-team-label
+kubectl describe validatingpolicy require-team-label
 kubectl describe clusterpolicy minimum-replicas
 kubectl describe clusterpolicy no-latest-tag-policy
 kubectl describe clusterpolicy deny-Public-Registry-Images
