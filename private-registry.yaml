@@ -1,7 +1,7 @@
 apiVersion: policies.kyverno.io/v1
 kind: ValidatingPolicy
 metadata:
-  name: deny-Public-Registry-Images
+  name: deny-public-registry-images
 
 spec:
   validationActions:

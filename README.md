@@ -182,7 +182,7 @@ Describe a policy for rule and status details:
 kubectl describe validatingpolicy require-team-label
 kubectl describe validatingpolicy minimum-replicas
 kubectl describe validatingpolicy no-latest-tag-policy
-kubectl describe validatingpolicy deny-Public-Registry-Images
+kubectl describe validatingpolicy deny-public-registry-images
 ```
 
 View recent PolicyReports if reporting resources are available:
